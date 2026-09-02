@@ -1,364 +1,801 @@
 Polluxa LinkedIn Agent Analytics Platform
-End-to-end Data Analytics platform for LinkedIn Agent performance, outreach analytics, data quality, risk intelligence, capacity monitoring, Power BI reporting, and DevOps observability.
 
-Assessment Coverage
-This repository follows the Polluxa Data Analyst Assessment Parts 1–8.
+End-to-end Data Analyst Assessment project covering ingestion, data
+engineering, data quality, risk intelligence, Power BI analytics,
+DevOps, CI/CD, observability, and pipeline resilience.
 
-Part 1  LinkedIn Agent Configuration & Evidence
-↓
-Part 2  API Engineering & Reliable Ingestion
-↓
-Part 3  Star Schema & Data Architecture
-↓
-Part 4  Data Quality & Scheduled Automation
-↓
-Part 5  Risk & Anomaly Modeling
-↓
-Part 6  Power BI Analytics
-↓
-Part 7  Docker + CI/CD + Observability
-↓
-Part 8  Final Evidence, Repository & Demonstration
-Repository Structure
+📌 Project Overview
+
+This project implements an end-to-end analytics platform for a LinkedIn
+agent workflow.
+
+The solution covers the complete pipeline:
+
+LinkedIn Agent / Source
+        ↓
+Incremental Ingestion
+        ↓
+Staging + Dead-Letter Handling
+        ↓
+Star Schema Database
+        ↓
+Data Quality Checks
+        ↓
+Risk & Anomaly Analysis
+        ↓
+Power BI Analytics
+        ↓
+Docker + CI/CD + Structured Logging
+        ↓
+Failure Recovery & End-to-End Validation
+
+The implementation is organized according to the assessment Parts 1--8.
+
+📚 Assessment Coverage
+
+Part                    Area                    Implementation
+
+Part 1                  LinkedIn Agent          Seven-step evidence
+Configuration &         pack and declared
+Evidence                account-age tier
+
+Part 2                  Data Ingestion &        Incremental ingestion,
+Reliability             idempotency, retries,
+backoff, rate-limit
+handling, dead-letter
+records, run metadata
+
+Part 3                  Data Modeling &         Star schema,
+Engineering             dimensions, facts,
+surrogate keys, data
+flow, data dictionary
+
+Part 4                  Data Quality & Pipeline Automated DQ checks, DQ
+Reliability             scoring/history,
+refresh pipeline,
+failure notification
+
+Part 5                  Risk Intelligence &     Statistical anomaly
+Capacity                scoring, risk
+classification,
+capacity/ceiling
+analysis
+
+Part 6                  Analytics & Power BI    KPI measures, agent
+health, outreach, risk,
+and reporting
+dashboards
+
+Part 7                  DevOps, CI/CD &         Docker, pinned
+Observability           dependencies, CI/CD,
+structured logs,
+correlation IDs,
+alerting
+
+🏗️ Architecture
+
+                    ┌──────────────────────┐
+                    │   Source / Agent API  │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │ Incremental Ingestion │
+                    │ Retries / Backoff      │
+                    │ Idempotency            │
+                    └──────────┬───────────┘
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+        ┌─────────────────┐        ┌─────────────────┐
+        │ Staging Tables  │        │ Dead-Letter     │
+        │ Valid Records   │        │ Invalid Records │
+        └────────┬────────┘        └─────────────────┘
+                 │
+                 ▼
+        ┌─────────────────────┐
+        │     Star Schema     │
+        │ Dimensions + Facts  │
+        └──────────┬──────────┘
+                   │
+          ┌────────┴─────────┐
+          ▼                  ▼
+ ┌─────────────────┐  ┌──────────────────┐
+ │ Data Quality    │  │ Risk / Anomaly   │
+ │ Checks & Score  │  │ Model            │
+ └────────┬────────┘  └────────┬─────────┘
+          │                    │
+          └──────────┬─────────┘
+                     ▼
+             ┌─────────────────┐
+             │ Power BI Export │
+             │ & Dashboard     │
+             └─────────────────┘
+
+📁 Repository Structure
+
 polluxa_part2/
-├── app/
-│   ├── init.py
-│   ├── main.py
-│   ├── ingest.py
-│   └── source_api.py
-├── data/
-├── sql/
-├── tests/
-├── docs/
-│   ├── data_flow.md
-│   └── data_dictionary.md
-├── evidence/
-├── logs/
+│
 ├── .github/
 │   └── workflows/
+│       └── ci.yml
+│
+├── app/
+│   ├── __init__.py
+│   ├── ingest.py
+│   ├── main.py
+│   └── source_api.py
+│
+├── data/
+│   └── polluxa_analytics.db
+│
+├── docs/
+│   ├── data_dictionary.md
+│   └── data_flow.md
+│
+├── evidence/
+│   ├── part1_evidance/
+│   ├── part2_evidance/
+│   ├── part3_evidance/
+│   ├── part4_evidance/
+│   ├── part5_evidence/
+│   ├── part6/
+│   ├── part7/
+│   └── part8/
+│
+├── powerbi_data/
+│   ├── ingestion_runs.csv
+│   ├── leads_staging.csv
+│   ├── dead_letter.csv
+│   ├── pipeline_state.csv
+│   ├── dim_agent.csv
+│   ├── dim_company.csv
+│   ├── dim_date.csv
+│   ├── fact_outreach.csv
+│   ├── dq_results_history.csv
+│   └── risk_model_results.csv
+│
+├── sql/
+│   ├── schema.sql
+│   └── dq_history.sql
+│
+├── tests/
+│   ├── test_dead_letter.py
+│   ├── test_ingest.py
+│   └── test_retry.py
+│
 ├── .env.example
-├── requirements.txt
+├── .gitignore
 ├── Dockerfile
-└── README.md
-Part 1 — LinkedIn Agent Configuration & Evidence
-Selected evidence:
+├── README.md
+├── check_db.py
+├── dq_checks.py
+├── export_powerbi.py
+├── load_star_schema.py
+├── part5_risk_model.py
+├── refresh_pipeline.py
+├── requirements.txt
+├── run_refresh.bat
+└── run_schema.py
 
-01_dashboard.png — Polluxa dashboard / analytics overview
-02_account_age.png — LinkedIn account age selection
-03_identity_company.png — Agent identity and company setup
-04_targeting.png — Agent targeting configuration
-05_build_search.png — LinkedIn Automation search/build configuration
-06_leads.png — Leads/results evidence
-07_analytics.png — Outreach pipeline / analytics evidence
-The source archive contained 14 screenshots; seven were selected as the strongest assessment-relevant evidence. Account-age evidence is 02_account_age.png.
+The SQLite database is generated/used by the local pipeline. Database
+schema and build scripts are maintained under sql/.
 
-Part 2 — API Engineering & Data Pipeline
-Implemented:
+⚙️ Technology Stack
 
-Environment-based configuration
-Incremental loading using an updated_at watermark
-Idempotent UPSERT using source_id
+Technology          Purpose
+
+Python 3.11         Application and pipeline implementation
+SQLite              Analytical database
+SQL                 Schema, transformations, and DQ history
+Power BI            Dashboard and analytics
+Docker              Containerization
+GitHub Actions      CI/CD automation
+Pytest              Automated testing
+FastAPI / Uvicorn   Source API service
+python-dotenv       Externalized configuration
+Requests            HTTP/API communication
+
+🔄 Part 2 --- Data Ingestion & Reliability
+
+The ingestion layer is designed around reliable and repeatable pipeline
+execution.
+
+Key capabilities
+
+Incremental loading
+
+Idempotent writes
+
+Retry handling
+
 Exponential backoff
-HTTP 429 / Retry-After handling
-Dead-letter capture for malformed records
-Persistent run metadata
-Source API
-The assessment does not provide a public Polluxa API endpoint/schema. Therefore, this project uses a local mock Source API with the contract required by the ingestion service. Replace the source URL/response mapping only when an authorized API is provided.
 
-Verification
-Automated tests:
+Rate-limit handling
 
-Idempotent UPSERT     PASSED
-HTTP 429 retry        PASSED
-Dead-letter handling  PASSED
+Dead-letter handling for malformed records
 
-3 passed
-Incremental verification:
+Pipeline run metadata
 
-First run:       5 rows in, 5 rows out
-Subsequent run:  0 rows in, 0 rows out
-Fresh Docker verification:
+Duplicate prevention
 
-5 rows in, 5 rows out
-Part 3 — Data Architecture & Star Schema
-Analytical model:
+Controlled failure recovery
+
+Main implementation
+
+app/ingest.py
+app/source_api.py
+app/main.py
+
+The ingestion process validates incoming records before writing them
+into the analytical pipeline.
+
+Invalid records are isolated into the dead-letter flow instead of
+contaminating the valid dataset.
+
+🗄️ Part 3 --- Data Modeling & Engineering
+
+The database follows a dimensional/star-schema approach.
+
+Core dimensions
 
 dim_agent
+
 dim_company
+
 dim_date
+
+Core fact
+
 fact_outreach
-Fact grain: one fact_outreach row represents one source LinkedIn outreach/lead record identified by source_id.
 
-dim_agent supports SCD Type 2 using:
+Operational / supporting tables
 
-effective_from
-effective_to
-is_current
-Data flow:
+leads_staging
 
-Source API → Ingestion Service → leads_staging
-→ Transformation → Star Schema → Analytics / BI
-Documentation:
+dead_letter
+
+ingestion_runs
+
+pipeline_state
+
+dq_results_history
+
+risk_model_results
+
+Database scripts
+
+sql/schema.sql
+sql/dq_history.sql
+
+Documentation
 
 docs/data_flow.md
 docs/data_dictionary.md
-Verified table counts:
 
-dim_agent       5
-dim_company     5
-dim_date        1
-fact_outreach   5
-Part 4 — Data Quality & Automation
-Quality checks cover:
+The model separates analytical dimensions from measurable outreach
+activity and preserves operational pipeline metadata.
+
+✅ Part 4 --- Data Quality & Pipeline Reliability
+
+The pipeline performs automated data-quality validation before
+downstream analytics are considered complete.
+
+DQ dimensions
 
 Completeness
+
 Uniqueness
+
 Validity
+
 Timeliness
+
 Referential integrity
-A composite DQ score and threshold are used, with DQ results retained for history.
 
-Scheduled refresh components:
+A composite DQ score is calculated and stored in the DQ history.
 
-refresh_pipeline.py
-run_refresh.bat
-Windows Task Scheduler configuration
-Part 5 — Advanced Analytics & Risk Modeling
-The risk model uses:
+DQ outputs
 
-Beta-Binomial smoothing
-Wilson 95% confidence intervals
-Weighted anomaly scoring
-Acceptance-collapse detection
-Reply-decay detection
-Ghosting/pending signals
-Account-capacity recommendations
-Results are stored in risk_model_results.
+powerbi_data/dq_results_history.csv
 
-Output includes agent, account tier, anomaly score, risk level, acceptance/reply/ rejection/ghost rates, recommended daily invites/messages, confidence, notes, recommendation, and calculation timestamp.
+The pipeline also records refresh execution status and supports failure
+notification/alert behavior.
 
-Configured account-age ceilings:
+Pipeline execution
 
-Account Age	Daily Invites	Daily Messages
-< 1 Month	5	10
-1 Month	10	15
-2–6 Months	15	25
-6–12 Months	25	40
-1+ Year	30	60
-Because the current dataset is small, confidence is limited. The model does not fabricate missing outcomes.
+python refresh_pipeline.py
 
-Part 6 — Power BI Analytics
-Power BI contains five pages:
+Expected successful flow:
+
+Incremental ingestion: SUCCESS
+Star schema load: SUCCESS
+Data quality checks: SUCCESS
+Run duration: <measured runtime>
+
+🧠 Part 5 --- Risk Intelligence & Capacity
+
+The risk model analyzes account-level behavior and produces an
+anomaly/risk score.
+
+Outputs
+
+Account-level anomaly score
+
+Risk classification
+
+Confidence indication
+
+Capacity/limit analysis
+
+Recommended operating limits
+
+Model result history
+
+Implementation:
+
+part5_risk_model.py
+
+Output table:
+
+risk_model_results
+
+The model documents assumptions, confidence, and limitations rather than
+presenting statistical outputs as certainty.
+
+📊 Part 6 --- Power BI Analytics
+
+The Power BI report contains five dashboard pages:
 
 Overview
+
 Agents
+
 Outreach
+
 Account Health
+
 Reports
-Explicit DAX measures include:
+
+Core KPIs
+
+The dashboard includes explicit DAX measures for:
 
 Invites Sent
-Acceptance Rate
+
 Reply Rate
+
+Acceptance Rate
+
 Total Outreach
+
 Total Replies
+
 Conversion Rate
+
 Throughput
-Account Health covers agent status, utilisation, ghost accounts, paused accounts, and agent-level health.
 
-Risk Intelligence uses Part 5 results including:
+Dashboard evidence
 
-Agent name
-Risk level
-Anomaly score
-Confidence
-Recommended daily invites
-Recommended daily messages
-Campaign ROI Limitation
-The current supplied analytical schema does not contain campaign, target-segment, cost, revenue, or ROI fields. Therefore Campaign ROI values are not fabricated.
+evidence/part6/
+├── PowerBI_01_Overview.png
+├── PowerBI_02_Agents.png
+├── PowerBI_03_Outreach.png
+├── PowerBI_04_Account_Health.png
+└── PowerBI_05_Reports.png
 
-A genuine Campaign ROI analysis requires the source data to provide campaign and target-segment identifiers plus the required financial/performance fields.
+Power BI data is exported from the analytical database into:
 
-Part 7 — DevOps, CI/CD & Observability
-Docker
-Container configuration:
+powerbi_data/
+
+Campaign ROI limitation
+
+The current source/schema does not provide the campaign cost, revenue,
+ROI, or target-segment fields required to calculate a defensible
+campaign ROI metric.
+
+Therefore, no ROI value is fabricated. The implementation preserves the
+available evidence and documents this data limitation instead.
+
+🐳 Part 7 --- DevOps, CI/CD & Observability
+
+Containerization
+
+The application is containerized using Docker.
 
 Dockerfile
-Base image:
+requirements.txt
+.env.example
 
-python:3.11-slim
-Build:
+Dependencies are pinned in requirements.txt.
 
-docker build -t polluxa-part2:1.0 .
-Run:
+Configuration is externalized rather than hard-coded into the
+application.
 
-docker run --rm   -e SOURCE_API_URL=http://host.docker.internal:8000
--e DATABASE_PATH=/tmp/test.db `
-polluxa-part2:1.0
-Verified result:
-
-rows_in: 5
-rows_out: 5
-Pinned Dependencies
-requirements.txt:
-
-fastapi==0.116.1
-uvicorn[standard]==0.35.0
-requests==2.32.4
-python-dotenv==1.1.1
-pytest==8.4.1
-Externalised Configuration
-Runtime configuration is supplied through environment variables. .env.example is provided as a template.
-
-Never commit .env, passwords, LinkedIn session cookies, API keys, or other secrets.
-
-Structured Logging
-Logs are machine-parseable JSON and contain:
-
-timestamp
-level
-message
-correlation_id
-A unique correlation ID is carried across events for the same pipeline run.
-
-Verified events include pipeline start, watermark retrieval, API success, records fetched, watermark update, successful completion, and database close.
-
-Evidence:
-
-Part_7_Structured_Logs_Correlation_ID.png
 CI/CD
-GitHub Actions workflow is implemented in:
 
-.github/workflows/
-Target flow:
+GitHub Actions workflow:
 
-Git Push
-↓
-Install dependencies
-↓
+.github/workflows/ci.yml
+
+The pipeline:
+
+Git Push / Pull Request
+        ↓
+Checkout
+        ↓
+Python 3.11
+        ↓
+Install pinned dependencies
+        ↓
+Run pytest
+        ↓
+Tests pass?
+     ↙       ↘
+   NO         YES
+   ↓           ↓
+ FAIL      Docker Build
+              ↓
+       Publish Image
+
+Deployment/image publishing is gated by the automated test result.
+
 Automated tests
-↓
-Test result gate
-↓
-Deployment stage
-Deployment must not proceed when automated tests fail.
+
+Current test suite:
+
+tests/test_dead_letter.py
+tests/test_ingest.py
+tests/test_retry.py
+
+Final test result:
+
+3 passed
+
+Structured logging
+
+Pipeline logs are machine-parseable JSON and include:
+
+Timestamp
+
+Log level
+
+Message
+
+Correlation ID
+
+A correlation ID is carried across a pipeline run so related events can
+be traced together.
+
+Example location:
+
+logs/ingestion.log
+logs/refresh_pipeline.log
 
 Alerting
-Required observability alerts cover:
+
+Alerting is implemented for:
 
 Pipeline failure
-DQ threshold breach
+
+Data-quality threshold breach
+
 Anomalous run duration
-Alert configuration must be externalised and must not contain hard-coded secrets.
 
-Part 8 — Final Deliverables & Demo
-Final repository package includes:
+The refresh pipeline includes alert handling for these conditions.
 
-Source repository
-Database schema/build scripts
-Power BI PBIX and screenshots
-Architecture documentation
-Data flow
-Data dictionary
-Part 1 evidence pack
-Docker configuration
-CI/CD configuration
-Structured logs
-Alerting configuration
-Automated tests
-Live demonstration scenarios:
+🧪 Part 8 --- Final Validation & Resilience Demo
 
-Mid-run failure recovery without duplicate records
-Malformed/bad-quality input caught by the pipeline
-End-to-end refresh from source through database/risk/DQ to Power BI
-Local Setup
+The final validation demonstrates that the pipeline behaves correctly
+under failure and bad-data conditions.
+
+Scenario 1 --- Mid-run Failure Recovery
+
+Test
+
+A controlled API failure was introduced during ingestion.
+
+Expected behavior:
+
+Pipeline fails without corrupting the dataset.
+
+Existing records are not duplicated.
+
+Recovery can be executed safely.
+
+Idempotency prevents duplicate records.
+
+Evidence
+
+evidence/part8/01_Scenario1_Failure_Recovery_No_Duplicates.png
+
+The validation confirmed that the record count and distinct source IDs
+remained consistent after the controlled failure and recovery.
+
+Scenario 2 --- Malformed / Bad-Quality Input
+
+Test
+
+A malformed input record was introduced into the source flow.
+
+Expected behavior:
+
+The malformed record is rejected.
+
+Valid records continue through the pipeline.
+
+The invalid record is captured in the dead-letter flow.
+
+The reason for rejection is recorded.
+
+Evidence
+
+evidence/part8/02_Scenario2_Bad_Data_Caught.png
+
+The malformed record was captured as a dead-letter record with the
+validation error instead of being loaded as a valid staging record.
+
+Scenario 3 --- End-to-End Refresh
+
+Test
+
+The complete pipeline was executed from source ingestion through the
+analytical outputs and Power BI refresh.
+
+Flow:
+
+Source
+  ↓
+Incremental Ingestion
+  ↓
+Star Schema Load
+  ↓
+Data Quality
+  ↓
+Risk Model
+  ↓
+Power BI CSV Export
+  ↓
+Power BI Refresh
+
+Evidence
+
+evidence/part8/03_Scenario3_End_to_End_Refresh_PowerBI.png
+
+The final dashboard screenshot demonstrates the refreshed analytics
+after the pipeline completed successfully.
+
+🧾 Part 1 --- LinkedIn Agent Configuration & Evidence
+
+The Part 1 evidence pack contains the seven assessment-relevant
+screenshots demonstrating the LinkedIn agent configuration and analytics
+workflow.
+
+Evidence                    Description
+
+01_dashboard.png          Polluxa dashboard / analytics overview
+02_account_age.png        LinkedIn account-age configuration
+03_identity_company.png   Agent identity and company configuration
+04_targeting.png          Agent targeting configuration
+05_build_search.png       Search/build configuration
+06_leads.png              Leads/results evidence
+07_analytics.png          Outreach pipeline / analytics evidence
+
+Declared Account Age Tier
+
+1+ Year
+
+📸 Evidence Map
+
+Assessment Part         Evidence Location            Purpose
+
+Part 1                  evidence/part1_evidance/   Seven-step
+configuration evidence
+
+Part 2                  evidence/part2_evidance/   Ingestion, database,
+and test evidence
+
+Part 3                  evidence/part3_evidance/   Star-schema and
+database verification
+
+Part 4                  evidence/part4_evidance/   DQ and scheduled
+refresh evidence
+
+Part 5                  evidence/part5_evidence/   Risk-model execution
+evidence
+
+Part 6                  evidence/part6/            Power BI dashboard
+pages
+
+Part 7                  evidence/part7/            Docker, CI/CD, logging,
+and alerting
+
+▶️ Setup & Run
+
+1. Clone the repository
+
+git clone https://github.com/Sayalimoon16/polluxa-linkedin-agent-analytics.git
+cd polluxa-linkedin-agent-analytics
+
+2. Create a virtual environment
+
+Windows
+
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
+
+3. Install dependencies
+
 pip install -r requirements.txt
-copy .env.example .env
-Start the local Source API:
 
-uvicorn app.source_api --reload --port 8000
-Run ingestion:
+4. Configure environment variables
 
-.venv\Scripts\activate
+Copy:
+
+.env.example
+
+to:
+
+.env
+
+Keep credentials and other sensitive configuration outside source
+control.
+
+5. Build / initialize the schema
+
+python run_schema.py
+
+6. Run ingestion
+
 python -m app.ingest
-Run tests:
 
-pytest -q
-Docker Log Evidence
-Persist container logs to the host:
+7. Run the full refresh pipeline
 
-docker run --rm   -v "C:\Users\HP\Downloads\polluxa_part2_starter\polluxa_part2\logs:/app/logs"
--e SOURCE_API_URL=http://host.docker.internal:8000   -e DATABASE_PATH=/tmp/test.db
-polluxa-part2:1.0
-Then:
+python refresh_pipeline.py
 
-Get-Content .\logs\ingestion.log -Tail 20
-Evidence Map
-Part 1 → selected agent screenshots
-Part 2 → database/tests/dead-letter/429/incremental evidence
-Part 3 → schema/data-flow/data-dictionary evidence
-Part 4 → DQ/scheduled-refresh evidence
-Part 5 → risk-model evidence
-Part 6 → Power BI page screenshots
-Part 7 → Docker/logging/CI-CD/alerting evidence
-Part 8 → final repository + evidence + live demo
-Current Status
-Part	Area	Status
-1	Agent configuration & evidence	Completed
-2	API ingestion & reliability	Completed
-3	Star schema & documentation	Completed
-4	DQ & scheduled automation	Implemented
-5	Risk & anomaly model	Completed
-6	Power BI analytics	Implemented
-6	Campaign ROI	Limitation documented
-7	Docker	Completed
-7	Pinned dependencies	Completed
-7	Externalised configuration	Implemented
-7	Structured JSON logging	Completed
-7	Correlation IDs	Completed
-7	CI/CD	Completed
-7	Alerting	Completed
-8	Final packaging	Pending finalisation
-Security
-Never commit passwords.
-Never commit LinkedIn session cookies.
-Never commit API keys or tokens.
-Use environment variables for secrets.
-Keep .env local.
-Commit only .env.example with placeholders.
-Data Integrity Principle
-This project does not fabricate unavailable business data. Where the supplied source schema does not contain fields required for an assessment output, the limitation is explicitly documented.
+8. Run the risk model
 
-About
+python part5_risk_model.py
 
-End-to-end LinkedIn Agent Analytics Platform for data ingestion, star-schema modeling, data quality checks, risk intelligence, Power BI analytics, CI/CD, structured logging, and observability.
+9. Export Power BI data
 
-Resources
-Readme
-Activity
-Stars
-0 stars
-Watchers
-0 watching
-Forks
-0 forks
-Releases
-No releases published
-Create a new release
-Packages
-1
-(1)
-polluxa-linkedin-agent-analytics
-Contributors
-1
-(1)
-@Sayalimoon16
-Sayalimoon16
-Languages
-Python
-99.2%
-Other
-0.8%
-Footer
+python export_powerbi.py
+
+10. Run automated tests
+
+pytest -v
+
+🐳 Docker
+
+Build
+
+docker build -t polluxa-linkedin-agent-analytics .
+
+Run
+
+docker run --rm polluxa-linkedin-agent-analytics
+
+The Docker image uses pinned Python dependencies and externalized
+configuration.
+
+🔐 Configuration & Security
+
+Sensitive credentials/configuration should be provided through
+environment variables.
+
+The repository uses:
+
+.env
+
+for local secrets and excludes it from version control.
+
+The committed template is:
+
+.env.example
+
+No private credentials should be committed to the repository.
+
+🧪 Validation Commands
+
+Run the following commands to validate the implementation:
+
+pytest -v
+
+python refresh_pipeline.py
+
+python part5_risk_model.py
+
+python export_powerbi.py
+
+For database verification:
+
+python check_db.py
+
+📋 Final Submission Checklist
+
+Requirement                             Status
+
+Source repository                       ✅
+README and setup instructions           ✅
+Database schema / build scripts         ✅
+Power BI report                         ✅
+Power BI page screenshots               ✅
+Architecture documentation              ✅
+Data flow documentation                 ✅
+Data dictionary                         ✅
+Part 1 seven-step evidence              ✅
+Part 2 ingestion/reliability evidence   ✅
+Part 3 schema evidence                  ✅
+Part 4 DQ/refresh evidence              ✅
+Part 5 risk-model evidence              ✅
+Part 6 dashboard evidence               ✅
+Part 7 Docker evidence                  ✅
+Part 7 CI/CD evidence                   ✅
+Part 7 structured logging evidence      ✅
+Part 7 alerting evidence                ✅
+Part 8 failure-recovery evidence        ✅
+Part 8 bad-data evidence                ✅
+Part 8 end-to-end refresh evidence      ✅
+
+📦 Key Deliverables
+
+README.md
+Dockerfile
+requirements.txt
+
+.github/workflows/ci.yml
+
+app/
+sql/
+tests/
+docs/
+evidence/
+powerbi_data/
+
+assemenet.pbix
+dq_checks.py
+refresh_pipeline.py
+part5_risk_model.py
+export_powerbi.py
+load_star_schema.py
+run_schema.py
+check_db.py
+
+🎯 Project Outcome
+
+The completed implementation demonstrates an end-to-end analytics
+pipeline with:
+
+Reliable incremental ingestion
+
+Idempotent database writes
+
+Retry and failure handling
+
+Dead-letter processing
+
+Dimensional/star-schema modeling
+
+Automated data-quality validation
+
+Risk and anomaly analysis
+
+Explicit Power BI DAX measures
+
+Docker containerization
+
+Automated CI/CD testing
+
+Structured logs with correlation IDs
+
+Pipeline, DQ, and duration alerting
+
+Failure recovery without duplicate records
+
+Bad-data detection
+
+End-to-end Power BI refresh validation
+
+The repository and evidence pack are organized to map the implementation
+back to the assessment Parts
