@@ -3,6 +3,7 @@ import os
 import smtplib
 import subprocess
 import sys
+import time
 from email.message import EmailMessage
 from datetime import datetime, timezone
 
@@ -48,12 +49,10 @@ def run_step(name, command):
     return result.stdout
 
 
-def send_failure_notification(error_message):
+def send_alert(subject, message_body):
     """
-    Send an email notification when the refresh pipeline fails.
-
-    SMTP settings are read from environment variables.
-    If SMTP is not configured, the failure is still logged.
+    Send an email alert using SMTP settings from environment variables.
+    If SMTP is not configured, the alert is logged instead.
     """
 
     smtp_host = os.getenv("SMTP_HOST")
@@ -69,18 +68,33 @@ def send_failure_notification(error_message):
         alert_email
     ]):
         logging.warning(
-            "SMTP not configured. Failure notification "
-            "was logged but no email was sent."
+            "SMTP not configured. Alert logged but no email was sent: %s",
+            subject
         )
         return
 
     message = EmailMessage()
-
-    message["Subject"] = "Polluxa Pipeline Failure"
+    message["Subject"] = subject
     message["From"] = smtp_user
     message["To"] = alert_email
 
-    message.set_content(
+    message.set_content(message_body)
+
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(message)
+
+    logging.info(
+        "Alert sent: %s to %s",
+        subject,
+        alert_email
+    )
+
+
+def send_failure_notification(error_message):
+    send_alert(
+        "Polluxa Pipeline Failure",
         f"""Polluxa LinkedIn Agent Analytics pipeline failed.
 
 Time:
@@ -91,19 +105,42 @@ Error:
 """
     )
 
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.send_message(message)
 
-    logging.info(
-        "Failure notification sent to %s",
-        alert_email
+def send_dq_alert(dq_output):
+    send_alert(
+        "Polluxa Data Quality Breach",
+        f"""Polluxa LinkedIn Agent Analytics detected a data-quality threshold breach.
+
+Time:
+{datetime.now(timezone.utc).isoformat()}
+
+DQ Result:
+{dq_output}
+"""
+    )
+
+
+def send_duration_alert(duration_seconds, threshold_seconds):
+    send_alert(
+        "Polluxa Abnormal Run Duration",
+        f"""Polluxa LinkedIn Agent Analytics pipeline exceeded the configured run-duration threshold.
+
+Time:
+{datetime.now(timezone.utc).isoformat()}
+
+Run duration:
+{duration_seconds:.2f} seconds
+
+Configured threshold:
+{threshold_seconds} seconds
+"""
     )
 
 
 def refresh_pipeline():
     logging.info("========== REFRESH STARTED ==========")
+
+    pipeline_start = time.monotonic()
 
     try:
 
@@ -135,8 +172,29 @@ def refresh_pipeline():
         # Check DQ status
         # --------------------------------------------------
         if "DQ Status: FAIL" in dq_output:
+            send_dq_alert(dq_output)
             raise RuntimeError(
                 "Data quality checks failed."
+            )
+
+        # --------------------------------------------------
+        # Check abnormal pipeline duration
+        # --------------------------------------------------
+        duration_seconds = time.monotonic() - pipeline_start
+        threshold_seconds = float(
+            os.getenv("MAX_RUN_DURATION_SECONDS", "300")
+        )
+
+        logging.info(
+            "Pipeline duration: %.2f seconds; threshold: %.2f seconds",
+            duration_seconds,
+            threshold_seconds
+        )
+
+        if duration_seconds > threshold_seconds:
+            send_duration_alert(
+                duration_seconds,
+                threshold_seconds
             )
 
         logging.info("========== REFRESH SUCCESS ==========")
@@ -146,6 +204,13 @@ def refresh_pipeline():
         print("1. Incremental ingestion: SUCCESS")
         print("2. Star schema load: SUCCESS")
         print("3. Data quality checks: SUCCESS")
+        print(f"4. Run duration: {duration_seconds:.2f} seconds")
+
+        if duration_seconds > threshold_seconds:
+            print(
+                f"WARNING: Run duration exceeded "
+                f"threshold of {threshold_seconds:.0f} seconds"
+            )
 
     except Exception as exc:
 
