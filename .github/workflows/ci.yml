@@ -1,4 +1,4 @@
-name: Polluxa CI
+name: Polluxa CI/CD
 
 on:
   push:
@@ -6,13 +6,17 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -26,3 +30,27 @@ jobs:
 
       - name: Run automated tests
         run: pytest -v
+
+  deliver:
+    name: Build and Publish Docker Image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/sayalimoon16/polluxa-linkedin-agent-analytics:${{ github.sha }} \
+            -t ghcr.io/sayalimoon16/polluxa-linkedin-agent-analytics:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/sayalimoon16/polluxa-linkedin-agent-analytics:${{ github.sha }}
+          docker push ghcr.io/sayalimoon16/polluxa-linkedin-agent-analytics:latest
