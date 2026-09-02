@@ -1,1 +1,2 @@
 id,run_id,payload,error_message,created_at
+1,ecf652ce-f44c-443f-a27a-c01865d56324,"{""id"": ""BAD001"", ""name"": """", ""job_title"": ""Test"", ""company"": ""Test"", ""status"": ""test"", ""updated_at"": ""2026-09-03T10:00:00+00:00""}",Missing required field,2026-09-02T19:20:38.694222+00:00
