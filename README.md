@@ -125,8 +125,9 @@ Failure recovery, bad-data detection, and end-to-end refresh scenarios
              │ & Dashboard     │
              └─────────────────┘
 
-📁 Repository Structure
+## 📁 Repository Structure
 
+```text
 polluxa_part2/
 │
 ├── .github/
