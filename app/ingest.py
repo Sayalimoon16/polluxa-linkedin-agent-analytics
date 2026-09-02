@@ -128,7 +128,7 @@ def save_watermark(conn, watermark):
 # API Request With Retry
 # ---------------------------------------------------------
 
-def fetch_with_retry(url, headers, params, correlation_id):
+def fetch_with_retry(url, headers, params, correlation_id=None):
     delay = 1
 
     for _ in range(MAX_RETRIES):
